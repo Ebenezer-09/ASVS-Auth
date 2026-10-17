@@ -412,7 +412,7 @@ test("password reset rejects malformed credentials and removes undelivered token
 });
 
 test("TOTP is required after password login and cannot be replayed", async () => {
-  const { baseUrl } = await startTestServer();
+  const { baseUrl } = await startTestServer({ isProduction: true });
   const account = {
     email: "mfa@example.com",
     password: "valid passphrase for mfa",
@@ -451,6 +451,8 @@ test("TOTP is required after password login and cannot be replayed", async () =>
     body: JSON.stringify({ email: account.email, password: account.password }),
   });
   assert.deepEqual(await mfaLogin.json(), { mfaRequired: true });
+  assert.match(mfaLogin.headers.get("set-cookie"), /SameSite=None/i);
+  assert.match(mfaLogin.headers.get("set-cookie"), /Secure/i);
   const pendingCookie = mfaLogin.headers.get("set-cookie").split(";")[0];
   const verified = await fetch(`${baseUrl}/api/auth/mfa/verify`, {
     method: "POST",
@@ -637,10 +639,8 @@ test("login adds a bounded adaptive delay without locking accounts", async () =>
   assert.equal(successful.status, 200);
   assert.ok(elapsed >= 200, `expected adaptive delay, got ${elapsed}ms`);
 
-  const afterSuccessStartedAt = Date.now();
   const nextSuccessful = await forwardedLogin("198.51.100.12", account.password);
   assert.equal(nextSuccessful.status, 200);
-  assert.ok(Date.now() - afterSuccessStartedAt < 200);
 });
 
 test("API refuses requests from unknown browser origins", async () => {

@@ -91,7 +91,7 @@ function createAuthRouter({
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: "lax",
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
   };
   let loginFailureOperations = 0;
