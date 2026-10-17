@@ -30,9 +30,22 @@ function createMailer(smtp, frontendUrl, emailApi = {}, fetchRequest = fetch) {
         signal: AbortSignal.timeout(10_000),
       });
       if (!response.ok) {
+        const responseText = await response.text();
+        let providerError = {};
+        try {
+          providerError = JSON.parse(responseText);
+        } catch {
+          providerError = {};
+        }
         const error = new Error(`Resend a refusé l’envoi du courriel (${response.status}).`);
         error.code = "EMAIL_API_REJECTED";
         error.status = response.status;
+        if (typeof providerError.name === "string") {
+          error.providerCode = providerError.name.slice(0, 100);
+        }
+        if (typeof providerError.message === "string") {
+          error.providerMessage = providerError.message.slice(0, 300);
+        }
         throw error;
       }
       return;

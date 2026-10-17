@@ -37,11 +37,21 @@ test("Resend API errors are surfaced to password reset handling", async () => {
     {},
     "https://frontend.example",
     { resendApiKey: "test-api-key", from: "Auth <auth@example.com>" },
-    async () => ({ ok: false, status: 422 }),
+    async () => ({
+      ok: false,
+      status: 403,
+      text: async () =>
+        JSON.stringify({
+          name: "validation_error",
+          message: "Verify the sender domain before sending.",
+        }),
+    }),
   );
 
   await assert.rejects(mailer.sendPasswordReset("user@example.com", "reset-token"), {
     code: "EMAIL_API_REJECTED",
-    status: 422,
+    status: 403,
+    providerCode: "validation_error",
+    providerMessage: "Verify the sender domain before sending.",
   });
 });
