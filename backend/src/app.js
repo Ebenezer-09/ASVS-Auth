@@ -14,6 +14,7 @@ function createApp({
   requireMfa = defaultConfig.requireMfa,
   trustProxyHops = defaultConfig.trustProxyHops,
   smtp = defaultConfig.smtp,
+  emailApi = defaultConfig.emailApi,
   mailer: injectedMailer,
   isProduction = defaultConfig.isProduction,
   rateLimitMax = defaultConfig.authRateLimitMax,
@@ -22,7 +23,7 @@ function createApp({
 } = {}) {
   const app = express();
 const database = injectedDatabase || createDatabase({ databaseUrl });
-  const mailer = injectedMailer || createMailer(smtp, frontendUrl);
+  const mailer = injectedMailer || createMailer(smtp, frontendUrl, emailApi);
 
   app.disable("x-powered-by");
   if (trustProxyHops > 0) app.set("trust proxy", trustProxyHops);

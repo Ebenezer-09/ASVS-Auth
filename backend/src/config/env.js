@@ -18,8 +18,17 @@ if (process.env.NODE_ENV === "production" && process.env.SUPABASE_DB_SSL === "fa
 if (process.env.NODE_ENV === "production" && process.env.REQUIRE_MFA === "false") {
   throw new Error("REQUIRE_MFA ne peut pas être désactivé en production.");
 }
-if (process.env.NODE_ENV === "production" && (!process.env.SMTP_HOST || !process.env.SMTP_FROM)) {
-  throw new Error("SMTP_HOST et SMTP_FROM doivent être configurés en production.");
+if (process.env.NODE_ENV === "production") {
+  const resendConfigured = Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+  const smtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_FROM);
+  if (!resendConfigured && !smtpConfigured) {
+    throw new Error(
+      "Configurez RESEND_API_KEY et EMAIL_FROM, ou SMTP_HOST et SMTP_FROM, en production.",
+    );
+  }
+}
+if (process.env.RESEND_API_KEY && !process.env.EMAIL_FROM) {
+  throw new Error("EMAIL_FROM doit être défini lorsque RESEND_API_KEY est configuré.");
 }
 if (Boolean(process.env.SMTP_USER) !== Boolean(process.env.SMTP_PASS)) {
   throw new Error("SMTP_USER et SMTP_PASS doivent être configurés ensemble.");
@@ -83,6 +92,10 @@ module.exports = {
     user: process.env.SMTP_USER,
     password: process.env.SMTP_PASS,
     from: process.env.SMTP_FROM,
+  },
+  emailApi: {
+    resendApiKey: process.env.RESEND_API_KEY,
+    from: process.env.EMAIL_FROM,
   },
   isProduction: process.env.NODE_ENV === "production",
 };

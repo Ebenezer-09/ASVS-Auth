@@ -369,6 +369,7 @@ function createAuthService({
           );
           console.error("Échec de l’envoi du message de réinitialisation.", {
             code: error.code || "unknown",
+            ...(error.status ? { status: error.status } : {}),
           });
         }
       }

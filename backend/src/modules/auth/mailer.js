@@ -1,7 +1,8 @@
 const nodemailer = require("nodemailer");
 
-function createMailer(smtp, frontendUrl) {
+function createMailer(smtp, frontendUrl, emailApi = {}, fetchRequest = fetch) {
   const configured = Boolean(smtp.host && smtp.from);
+  const resendConfigured = Boolean(emailApi.resendApiKey && emailApi.from);
   const transporter = configured
     ? nodemailer.createTransport({
         host: smtp.host,
@@ -13,6 +14,29 @@ function createMailer(smtp, frontendUrl) {
     : null;
 
   async function send({ to, subject, text }) {
+    if (resendConfigured) {
+      const response = await fetchRequest("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${emailApi.resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: emailApi.from,
+          to: [to],
+          subject,
+          text,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) {
+        const error = new Error(`Resend a refusé l’envoi du courriel (${response.status}).`);
+        error.code = "EMAIL_API_REJECTED";
+        error.status = response.status;
+        throw error;
+      }
+      return;
+    }
     if (!transporter) {
       const error = new Error("Le service SMTP n’est pas configuré.");
       error.status = 503;

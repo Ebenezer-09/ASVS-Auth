@@ -16,8 +16,14 @@ puis configurez au minimum :
 - `JWT_SECRET` : secret aléatoire d’au moins 32 octets.
 - `TOTP_ENCRYPTION_KEY` : clé AES-256 en base64, générée avec
   `openssl rand -base64 32`.
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` et
-  `SMTP_FROM` : compte d’envoi SMTP.
+- En production, configurez soit `RESEND_API_KEY` et `EMAIL_FROM` (API HTTPS
+  Resend, recommandée sur Render), soit `SMTP_HOST`, `SMTP_PORT`,
+  `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` et `SMTP_FROM` (SMTP).
+- Avec Resend, vérifiez le domaine expéditeur dans Resend, puis ajoutez
+  `RESEND_API_KEY` et `EMAIL_FROM` aux variables d’environnement du service
+  Render. `EMAIL_FROM` doit utiliser ce domaine vérifié. Définissez aussi
+  `FRONTEND_URL` sur l’URL publique du site Vercel pour que le lien envoyé
+  ramène vers la bonne page.
 - `FRONTEND_URL` et `FRONTEND_ORIGINS` : URL d’envoi des liens et origines
   navigateur autorisées.
 - `TRUST_PROXY_HOPS` : nombre exact de reverse proxies de confiance devant
@@ -58,7 +64,7 @@ npm start
   initial, associé au jeton temporaire d’enrôlement.
 - `POST /api/auth/mfa/verify` : validation MFA à la connexion.
 - `POST /api/auth/password/reset-request` et `/password/reset` : récupération
-  avec jeton SMTP aléatoire, à usage unique et valable 10 minutes. La réponse
+  avec jeton aléatoire, à usage unique et valable 10 minutes. La réponse
   de demande reste générique pour ne pas révéler l’existence du compte. Si
   l’envoi échoue, le jeton non livré est supprimé et la réponse reste générique.
 - `GET /api/auth/me`, `POST /api/auth/logout` : session authentifiée.
