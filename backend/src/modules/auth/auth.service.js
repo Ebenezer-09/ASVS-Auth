@@ -451,13 +451,20 @@ function createAuthService({
         return { status: 400, body: { error: "La configuration MFA n’est pas disponible." } };
       }
       const codes = Array.from({ length: 10 }, () => randomBytes(9).toString("base64url"));
+      const recoveryCodeHashes = [];
       for (const recoveryCode of codes) {
-        await database.query(
-          "INSERT INTO recovery_codes (user_id, code_hash) VALUES ($1, $2)",
-          [user.id, await argon2.hash(recoveryCode, ARGON2_OPTIONS)],
-        );
+        recoveryCodeHashes.push(await argon2.hash(recoveryCode, ARGON2_OPTIONS));
       }
-      await sendSecurityNotice(user.email, "activation de l’authentification MFA");
+      const recoveryCodeValues = [];
+      const recoveryCodeRows = recoveryCodeHashes.map((codeHash, index) => {
+        recoveryCodeValues.push(user.id, codeHash);
+        return `($${index * 2 + 1}, $${index * 2 + 2})`;
+      });
+      await database.query(
+        `INSERT INTO recovery_codes (user_id, code_hash) VALUES ${recoveryCodeRows.join(", ")}`,
+        recoveryCodeValues,
+      );
+      void sendSecurityNotice(user.email, "activation de l’authentification MFA");
       const result = {
         status: 200,
         body: { message: "MFA activée.", recoveryCodes: codes },

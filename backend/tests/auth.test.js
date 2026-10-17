@@ -514,7 +514,24 @@ test("TOTP is required after password login and cannot be replayed", async () =>
 });
 
 test("new sign-ins cannot access an authenticated route until TOTP is enrolled", async () => {
-  const { baseUrl } = await startTestServer({ requireMfa: true });
+  let releaseSecurityNotice;
+  let signalSecurityNoticeStarted;
+  const securityNoticeStarted = new Promise((resolve) => {
+    signalSecurityNoticeStarted = resolve;
+  });
+  const pendingSecurityNotice = new Promise((resolve) => {
+    releaseSecurityNotice = resolve;
+  });
+  const { baseUrl } = await startTestServer({
+    requireMfa: true,
+    mailer: {
+      async sendPasswordReset() {},
+      async sendSecurityNotice() {
+        signalSecurityNoticeStarted();
+        await pendingSecurityNotice;
+      },
+    },
+  });
   const account = {
     email: "mandatory-mfa@example.com",
     password: "long unique account phrase",
@@ -547,6 +564,8 @@ test("new sign-ins cannot access an authenticated route until TOTP is enrolled",
   });
   assert.equal(enrolled.status, 200);
   assert.match(enrolled.headers.get("set-cookie"), /auth_token=/);
+  await securityNoticeStarted;
+  releaseSecurityNotice();
 });
 
 test("authentication endpoints rate-limit repeated attempts", async () => {
