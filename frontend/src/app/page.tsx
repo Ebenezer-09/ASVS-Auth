@@ -82,7 +82,6 @@ export default function Home() {
             </Link>
           </div>
           <p className="mt-4 text-xs leading-5 text-slate-600 sm:mt-5">
-            Démonstration des mécanismes d’authentification dans le cadre d’un TP.
           </p>
         </div>
 
@@ -169,9 +168,6 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="alert alert-success py-3 text-sm">
-                <span className="font-medium">Un parcours de démonstration guidé.</span>
-              </div>
             </div>
           </div>
         </div>
