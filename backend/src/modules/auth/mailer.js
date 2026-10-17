@@ -9,6 +9,7 @@ function createMailer(
 ) {
   const configured = Boolean(smtp.host && smtp.from);
   const resendConfigured = Boolean(emailApi.resendApiKey && emailApi.from);
+  const brevoConfigured = Boolean(emailApi.brevoApiKey && emailApi.brevoFrom);
   const transporter = configured
     ? createTransport({
         host: smtp.host,
@@ -20,6 +21,41 @@ function createMailer(
     : null;
 
   async function send({ to, subject, text }) {
+    if (brevoConfigured) {
+      const senderMatch = emailApi.brevoFrom.match(/^\s*(.*?)\s*<([^<>]+)>\s*$/);
+      const sender = senderMatch
+        ? { name: senderMatch[1].trim(), email: senderMatch[2].trim() }
+        : { email: emailApi.brevoFrom.trim() };
+      const response = await fetchRequest("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": emailApi.brevoApiKey,
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+        body: JSON.stringify({
+          sender,
+          to: [{ email: to }],
+          subject,
+          textContent: text,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) {
+        const providerError = await readProviderError(response);
+        const error = new Error(`Brevo a refusé l’envoi du courriel (${response.status}).`);
+        error.code = "EMAIL_API_REJECTED";
+        error.status = response.status;
+        if (typeof providerError.code === "string") {
+          error.providerCode = providerError.code.slice(0, 100);
+        }
+        if (typeof providerError.message === "string") {
+          error.providerMessage = providerError.message.slice(0, 300);
+        }
+        throw error;
+      }
+      return;
+    }
     if (transporter) {
       await transporter.sendMail({ from: smtp.from, to, subject, text });
       return;
@@ -40,13 +76,7 @@ function createMailer(
         signal: AbortSignal.timeout(10_000),
       });
       if (!response.ok) {
-        const responseText = await response.text();
-        let providerError = {};
-        try {
-          providerError = JSON.parse(responseText);
-        } catch {
-          providerError = {};
-        }
+        const providerError = await readProviderError(response);
         const error = new Error(`Resend a refusé l’envoi du courriel (${response.status}).`);
         error.code = "EMAIL_API_REJECTED";
         error.status = response.status;
@@ -82,6 +112,14 @@ function createMailer(
       });
     },
   };
+}
+
+async function readProviderError(response) {
+  try {
+    return JSON.parse(await response.text());
+  } catch {
+    return {};
+  }
 }
 
 module.exports = { createMailer };

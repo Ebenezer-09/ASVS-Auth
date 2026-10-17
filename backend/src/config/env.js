@@ -20,17 +20,25 @@ if (process.env.NODE_ENV === "production" && process.env.REQUIRE_MFA === "false"
 }
 if (process.env.NODE_ENV === "production") {
   const resendConfigured = Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+  const brevoApiConfigured = Boolean(
+    process.env.BREVO_API_KEY &&
+      (process.env.DEFAULT_FROM_EMAIL || process.env.SMTP_FROM),
+  );
   const smtpConfigured = Boolean(
     (process.env.SMTP_HOST || process.env.EMAIL_HOST) &&
       (process.env.SMTP_FROM || process.env.DEFAULT_FROM_EMAIL),
   );
-  if (!resendConfigured && !smtpConfigured) {
+  if (!resendConfigured && !brevoApiConfigured && !smtpConfigured) {
     throw new Error(
-      "Configurez le SMTP (SMTP_HOST/SMTP_FROM ou EMAIL_HOST/DEFAULT_FROM_EMAIL) ou Resend en production.",
+      "Configurez l’API Brevo, le SMTP ou Resend en production.",
     );
   }
 }
-if (process.env.RESEND_API_KEY && !process.env.EMAIL_FROM) {
+if (
+  process.env.RESEND_API_KEY &&
+  !process.env.EMAIL_FROM &&
+  !process.env.BREVO_API_KEY
+) {
   throw new Error("EMAIL_FROM doit être défini lorsque RESEND_API_KEY est configuré.");
 }
 const smtpUser = process.env.SMTP_USER || process.env.EMAIL_HOST_USER;
@@ -109,6 +117,8 @@ module.exports = {
   emailApi: {
     resendApiKey: process.env.RESEND_API_KEY,
     from: process.env.EMAIL_FROM,
+    brevoApiKey: process.env.BREVO_API_KEY,
+    brevoFrom: process.env.DEFAULT_FROM_EMAIL || process.env.SMTP_FROM,
   },
   isProduction: process.env.NODE_ENV === "production",
 };
