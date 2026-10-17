@@ -112,7 +112,7 @@ export default function LoginPage() {
       )}
       <section className="card w-full max-w-sm border border-slate-200 bg-white shadow-sm">
         <div className="card-body p-6 sm:p-8">
-          <Link href="/" className="text-sm font-semibold text-blue-700">
+          <Link href="/" className="link link-hover text-sm font-semibold text-slate-900">
             ← Retour à l’accueil
           </Link>
           <h1 className="mt-3 text-2xl font-bold text-slate-900">Connexion</h1>

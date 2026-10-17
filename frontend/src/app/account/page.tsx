@@ -123,7 +123,7 @@ export default function AccountPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 px-5 py-12">
-      <Link href="/" className="text-sm font-semibold text-blue-700">
+      <Link href="/" className="link link-hover text-sm font-semibold text-slate-900">
         ← Accueil
       </Link>
       <section className="card border border-slate-200 bg-white shadow-sm">
