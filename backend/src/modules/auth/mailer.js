@@ -1,19 +1,29 @@
 const nodemailer = require("nodemailer");
 
-function createMailer(smtp, frontendUrl, emailApi = {}, fetchRequest = fetch) {
+function createMailer(
+  smtp,
+  frontendUrl,
+  emailApi = {},
+  fetchRequest = fetch,
+  createTransport = nodemailer.createTransport,
+) {
   const configured = Boolean(smtp.host && smtp.from);
   const resendConfigured = Boolean(emailApi.resendApiKey && emailApi.from);
   const transporter = configured
-    ? nodemailer.createTransport({
+    ? createTransport({
         host: smtp.host,
         port: smtp.port,
         secure: smtp.secure,
-        requireTLS: !smtp.secure,
+        requireTLS: smtp.requireTLS ?? !smtp.secure,
         auth: smtp.user ? { user: smtp.user, pass: smtp.password } : undefined,
       })
     : null;
 
   async function send({ to, subject, text }) {
+    if (transporter) {
+      await transporter.sendMail({ from: smtp.from, to, subject, text });
+      return;
+    }
     if (resendConfigured) {
       const response = await fetchRequest("https://api.resend.com/emails", {
         method: "POST",
@@ -50,12 +60,9 @@ function createMailer(smtp, frontendUrl, emailApi = {}, fetchRequest = fetch) {
       }
       return;
     }
-    if (!transporter) {
-      const error = new Error("Le service SMTP n’est pas configuré.");
-      error.status = 503;
-      throw error;
-    }
-    await transporter.sendMail({ from: smtp.from, to, subject, text });
+    const error = new Error("Le service d’envoi des courriels n’est pas configuré.");
+    error.status = 503;
+    throw error;
   }
 
   return {

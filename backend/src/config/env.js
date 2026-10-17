@@ -20,18 +20,27 @@ if (process.env.NODE_ENV === "production" && process.env.REQUIRE_MFA === "false"
 }
 if (process.env.NODE_ENV === "production") {
   const resendConfigured = Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
-  const smtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_FROM);
+  const smtpConfigured = Boolean(
+    (process.env.SMTP_HOST || process.env.EMAIL_HOST) &&
+      (process.env.SMTP_FROM || process.env.DEFAULT_FROM_EMAIL),
+  );
   if (!resendConfigured && !smtpConfigured) {
     throw new Error(
-      "Configurez RESEND_API_KEY et EMAIL_FROM, ou SMTP_HOST et SMTP_FROM, en production.",
+      "Configurez le SMTP (SMTP_HOST/SMTP_FROM ou EMAIL_HOST/DEFAULT_FROM_EMAIL) ou Resend en production.",
     );
   }
 }
 if (process.env.RESEND_API_KEY && !process.env.EMAIL_FROM) {
   throw new Error("EMAIL_FROM doit être défini lorsque RESEND_API_KEY est configuré.");
 }
-if (Boolean(process.env.SMTP_USER) !== Boolean(process.env.SMTP_PASS)) {
-  throw new Error("SMTP_USER et SMTP_PASS doivent être configurés ensemble.");
+const smtpUser = process.env.SMTP_USER || process.env.EMAIL_HOST_USER;
+const smtpPassword = process.env.SMTP_PASS || process.env.EMAIL_HOST_PASSWORD;
+if (Boolean(smtpUser) !== Boolean(smtpPassword)) {
+  throw new Error("Les identifiants SMTP doivent être configurés ensemble.");
+}
+const emailUseTls = process.env.EMAIL_USE_TLS;
+if (emailUseTls && !["true", "false"].includes(emailUseTls.toLowerCase())) {
+  throw new Error("EMAIL_USE_TLS doit valoir true ou false.");
 }
 
 const jwtSecret = process.env.JWT_SECRET || randomBytes(32).toString("hex");
@@ -86,12 +95,16 @@ module.exports = {
   authRateLimitMax,
   authRateLimitWindowMs: authRateLimitWindowMinutes * 60 * 1000,
   smtp: {
-    host: process.env.SMTP_HOST,
-    port: Number.parseInt(process.env.SMTP_PORT || "587", 10),
+    host: process.env.SMTP_HOST || process.env.EMAIL_HOST,
+    port: Number.parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || "587", 10),
     secure: process.env.SMTP_SECURE === "true",
-    user: process.env.SMTP_USER,
-    password: process.env.SMTP_PASS,
-    from: process.env.SMTP_FROM,
+    requireTLS:
+      emailUseTls === undefined
+        ? process.env.SMTP_SECURE !== "true"
+        : emailUseTls.toLowerCase() === "true",
+    user: smtpUser,
+    password: smtpPassword,
+    from: process.env.SMTP_FROM || process.env.DEFAULT_FROM_EMAIL,
   },
   emailApi: {
     resendApiKey: process.env.RESEND_API_KEY,

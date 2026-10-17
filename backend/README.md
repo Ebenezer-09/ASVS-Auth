@@ -16,14 +16,16 @@ puis configurez au minimum :
 - `JWT_SECRET` : secret aléatoire d’au moins 32 octets.
 - `TOTP_ENCRYPTION_KEY` : clé AES-256 en base64, générée avec
   `openssl rand -base64 32`.
-- En production, configurez soit `RESEND_API_KEY` et `EMAIL_FROM` (API HTTPS
-  Resend, recommandée sur Render), soit `SMTP_HOST`, `SMTP_PORT`,
-  `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` et `SMTP_FROM` (SMTP).
-- Avec Resend, vérifiez le domaine expéditeur dans Resend, puis ajoutez
-  `RESEND_API_KEY` et `EMAIL_FROM` aux variables d’environnement du service
-  Render. `EMAIL_FROM` doit utiliser ce domaine vérifié. Définissez aussi
-  `FRONTEND_URL` sur l’URL publique du site Vercel pour que le lien envoyé
-  ramène vers la bonne page.
+- En production, configurez le relais SMTP Brevo avec `EMAIL_HOST`,
+  `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` et
+  `DEFAULT_FROM_EMAIL`. Le backend Node utilise ces variables directement ;
+  `EMAIL_BACKEND` est une option Django et n’est pas nécessaire ici.
+- Les variables SMTP standard `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`,
+  `SMTP_USER`, `SMTP_PASS` et `SMTP_FROM` restent également prises en charge.
+  Si SMTP et Resend sont tous les deux configurés, le backend privilégie SMTP.
+- Définissez `FRONTEND_URL` sur l’URL publique Vercel afin que le lien de
+  réinitialisation renvoie vers la bonne page. Sur Render, supprimez la clé
+  `RESEND_API_KEY` si vous ne souhaitez plus utiliser Resend.
 - `FRONTEND_URL` et `FRONTEND_ORIGINS` : URL d’envoi des liens et origines
   navigateur autorisées.
 - `TRUST_PROXY_HOPS` : nombre exact de reverse proxies de confiance devant
