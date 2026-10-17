@@ -1,0 +1,29 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "daisyui": "^5.7.50",
+    "next": "16.4.0",
+    "qrcode.react": "^4.2.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "source-map-js": "^1.2.2",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "typescript": "^5"
+  }
+}
